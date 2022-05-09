@@ -1,11 +1,11 @@
 import unittest
 from test_data import *
-from serializer.provider import Provider
+from serializer import provider
 
 
 class TomlTestCase(unittest.TestCase):
     def setUp(self):
-        self.serializer = Provider.create_serializer('TOML')
+        self.serializer = provider.Provider.create_serializer('TOML')
 
     def tearDown(self):
         pass
@@ -74,11 +74,6 @@ class TomlTestCase(unittest.TestCase):
         x = self.serializer.dumps(list_data)
         res_data = self.serializer.loads(x)
         assert res_data == list_data
-
-    def test_tuple_s(self):
-        x = self.serializer.dumps(tuple_data)
-        res_data = self.serializer.loads(x)
-        assert res_data == tuple_data
 
     def test_complex_list(self):
         x = None
