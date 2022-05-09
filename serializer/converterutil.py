@@ -10,26 +10,21 @@ def from_code(code: CodeType):
     code_dict["co_nlocals"] = code.co_nlocals
     code_dict["co_stacksize"] = code.co_stacksize
     code_dict["co_flags"] = code.co_flags
-    s = base64.b64encode(code.co_code)
-    code_dict["co_code"] = s.decode()
+    code_dict["co_code"] = base64.b64encode(code.co_code).decode()
     code_dict["co_consts"] = code.co_consts
     code_dict["co_names"] = code.co_names
     code_dict["co_varnames"] = code.co_varnames
     code_dict["co_filename"] = code.co_filename
     code_dict["co_name"] = code.co_name
     code_dict["co_firstlineno"] = code.co_firstlineno
-    s = base64.b64encode(code.co_lnotab)
-    code_dict["co_lnotab"] = s.decode()
+    code_dict["co_lnotab"] = base64.b64encode(code.co_lnotab).decode()
     code_dict["co_freevars"] = code.co_freevars
     code_dict["co_cellvars"] = code.co_cellvars
     return code_dict
 
-
 def to_code(code_dict):
-    s_code = code_dict["co_code"].encode()
-    code = base64.b64decode(s_code)
-    s_lnotab = code_dict["co_lnotab"].encode()
-    lnotab = base64.b64decode(s_lnotab)
+    code = base64.b64decode(code_dict["co_code"].encode())
+    lnotab = base64.b64decode(code_dict["co_lnotab"].encode())
     return CodeType(
         code_dict["co_argcount"], code_dict["co_posonlyargcount"], code_dict["co_kwonlyargcount"],
         code_dict["co_nlocals"], code_dict["co_stacksize"], code_dict["co_flags"],
@@ -40,18 +35,25 @@ def to_code(code_dict):
         tuple(code_dict["co_freevars"]), tuple(code_dict["co_cellvars"])
     )
 def to_serializable(obj):
-    if (isinstance(obj, (str, int, float, bool, dict, list))):
+    if (isinstance(obj, str)):
+        return {"str": obj}
+    if (isinstance(obj, int)):
+        return {"int": obj}
+    if (isinstance(obj, float)):
+        return {"float": obj}
+    if (isinstance(obj, list)):
+        res_dict = {}
+        for i, item in enumerate(obj):
+            res_dict[f"it{i}"] = to_serializable(item)
+        return {"list": res_dict}
+    if (isinstance(obj, dict)):
         return obj
     if (isinstance(obj, (tuple))):
         return {"tuple": obj}
     if (isinstance(obj, (FunctionType))):
         return {"func": {"__code__":from_code(obj.__code__), "__name__": obj.__name__, "__defaults__":to_serializable(obj.__defaults__), "__closure__":to_serializable(obj.__closure__)}}
     if (isinstance(obj, (CodeType))):
-        d = {}
-        pub_attributes = list(filter(lambda item: not item.startswith('_'), dir(obj)))
-        for attr in pub_attributes:
-            d[attr] = to_serializable(obj.__getattribute__(attr))
-        return {"code": d}
+        return {"code": from_code(obj)}
     if isinstance(obj, MappingProxyType):
         obj_dict = dict(obj)
         for key in obj_dict.keys():
@@ -78,6 +80,13 @@ def to_serializable(obj):
 def from_serializable(d):
     if isinstance(d, dict):
         for (k, v) in d.items():
+            if k == 'int' or k == 'str' or k == 'float':
+                return from_serializable(v)
+            if k == 'list':
+                res_list = []
+                for (kk, vv) in v.items():
+                    res_list.append(from_serializable(vv))
+                return res_list
             if k == 'type':
                 globals().update(__main__.__dict__)
                 defs = v['defs']
@@ -89,8 +98,8 @@ def from_serializable(d):
             if k == "func":
                 c = to_code(v["__code__"])
                 fname = v["__name__"]
-                fdefaults = v["__defaults__"]
-                fclosure = v["__closure__"]
+                fdefaults = from_serializable(v["__defaults__"])
+                fclosure = from_serializable(v["__closure__"])
                 return FunctionType(c, globals().copy(), fname, fdefaults, fclosure)
             if k == 'obj':
                 obj_type = from_serializable(v['type'])
@@ -99,10 +108,11 @@ def from_serializable(d):
                     obj = object.__new__(obj_type)
                     obj.__dict__ = obj_dict
                     for (kk, vv) in obj_dict.items():
-                        setattr(obj, kk, vv)
+                        setattr(obj, kk, from_serializable(vv))
                 except TypeError:
                     obj = None
                 return obj
             if k == "tuple":
-                return tuple(d.pop("tuple"))
-    return d
+                return tuple(d["tuple"])
+
+    return d if d != 'None' else None
