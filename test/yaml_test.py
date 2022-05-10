@@ -1,4 +1,5 @@
 import unittest
+import test_math
 from test_data import *
 from serializer import provider
 
@@ -13,16 +14,16 @@ class YamlTestCase(unittest.TestCase):
     def test_math(self):
         x = None
         with open("test.yaml", "w") as fl:
-            self.serializer.dump(math_data, fl)
+            self.serializer.dump(math.sin(1*123*42), fl)
         with open("test.yaml", "r") as fl:
             x = self.serializer.load(fl)
-        assert x == math_data
+        assert x == math.sin(1*123*42)
 
     def test_math_s(self):
-        x = self.serializer.dumps(math_data)
+        x = self.serializer.dumps(math.sin(1*123*42))
         res_data = self.serializer.loads(x)
-        assert res_data == math_data
-    
+        assert res_data == math.sin(1*123*42)
+
     def test_int(self):
         x = None
         with open("test.yaml", "w") as fl:
