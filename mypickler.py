@@ -1,11 +1,17 @@
-import sys
-print(sys.path)
 from serializer import Provider
 from pathlib import Path
+import configparser as cfg
 
-def deserialize(file):
-    format = Path(file.name).suffix.lstrip('.')
-    parser = Provider.create_serializer(format)
+def read_config(file):
+    config = cfg.ConfigParser()
+    config.read(file.name)
+    return (config['DEFAULT']['file'],config['DEFAULT']['format'])
+
+def deserialize(file, format: str):
+    file_format = Path(file.name).suffix.lstrip('.')
+    if (file_format == format):
+        raise ValueError("File is already encoded in specified format")
+    parser = Provider.create_serializer(file_format)
     if parser is not None:
         return parser.load(file)
     else:
@@ -29,11 +35,17 @@ if __name__ == "__main__":
     parser.add_argument(
         'format', help='format to which the file will be converted')
     parser.add_argument(
-        '-cfg', '--config', type=argparse.FileType('r'), nargs=1, required=False, help='configuration file')
+        '-cfg', '--config', type=argparse.FileType('r'), required=False, help='configuration file')
     args = parser.parse_args()
 
-    if not args.file or not args.format:
-        parser.print_help()
+    if args.config:
+        (file, format) = read_config(args.config)
     else:
-        obj = deserialize(args.file)
-        serialize(obj, args.file, args.format)
+        if not args.file or not args.format:
+            parser.print_help()
+            exit()
+        else:
+            file = args.file
+            format = args.format
+    obj = deserialize(file, format)
+    serialize(obj, file, format)        
