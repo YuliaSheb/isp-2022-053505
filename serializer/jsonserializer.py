@@ -3,7 +3,6 @@ import serializer.converterutil as util
 
 class JsonSerializer:
     def dumps(self, item):
-        """Serialize object, class or function to json."""
         def to_str(item):
             if isinstance(item, dict):
                 strings = []
@@ -24,7 +23,6 @@ class JsonSerializer:
         return to_str(util.to_serializable(item))
 
     def loads(self, string):
-        """Deserialize object, class or function from json."""
         null = None
         return util.from_serializable(eval(string))
 
