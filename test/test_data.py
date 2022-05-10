@@ -21,3 +21,4 @@ int_data = 100
 float_data = 120.345
 bool_data = True
 str_data = 'my string to serialization'
+math_data = math.sin(1 * 123 * 42)
