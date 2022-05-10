@@ -10,6 +10,19 @@ class YamlTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_math(self):
+        x = None
+        with open("test.yaml", "w") as fl:
+            self.serializer.dump(math_data, fl)
+        with open("test.yaml", "r") as fl:
+            x = self.serializer.load(fl)
+        assert x == math_data
+
+    def test_math_s(self):
+        x = self.serializer.dumps(math_data)
+        res_data = self.serializer.loads(x)
+        assert res_data == math_data
+    
     def test_int(self):
         x = None
         with open("test.yaml", "w") as fl:
